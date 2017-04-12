@@ -1,0 +1,7 @@
+INDEX VERSION 1.3+C:\OOAD\Capstone\.metadata\.plugins\org.eclipse.wst.jsdt.core\indexes
+815236548.index
+229879823.index
+2415592399.index
+768418525.index
+3221027809.index
+2351945485.index

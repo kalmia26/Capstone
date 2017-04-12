@@ -1,0 +1,27 @@
+<%@ page language="java" contentType="text/html; charset=EUC-KR"
+    pageEncoding="EUC-KR"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=EUC-KR">
+<title>Insert title here</title>
+</head>
+<body>
+	<div id="">
+			<a href="List1.jsp" id='a' target="left"><span>질문게시판</span></a>
+			<a href="List2.jsp" id='b' target="left"><span>파일공유게시판</span></a>
+			<a href="List3.jsp" id='c' target="left"><span>과제게시판</span></a>
+			<a href="" id='d'><span>설정</span></a>
+			
+		<select name="select">
+    	  <option value="L1">질문게시판</option>
+          <option value="L2">파일공유게시판</option>
+          <option value="L3">과제게시판</option>
+          <option>설정</option>
+		</select>
+		
+		<input type="submit" value="이동">
+      
+	</div>
+</body>
+</html>
