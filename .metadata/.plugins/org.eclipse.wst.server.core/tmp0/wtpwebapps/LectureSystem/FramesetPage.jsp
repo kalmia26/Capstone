@@ -8,9 +8,6 @@
 </head>
 	<frameset cols="20%,*">
 		<frame src="List1.jsp" name="left">
-		<frameset rows="80%,*">
 			<frame src="pptView.jsp" name="raght">
-			<frame src="Chatting.jsp" name="low">
 		</frameset>
-	</frameset>
 </html>

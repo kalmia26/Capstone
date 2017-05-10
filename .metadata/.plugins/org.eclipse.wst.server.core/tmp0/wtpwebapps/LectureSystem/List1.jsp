@@ -10,10 +10,7 @@
 <table width="100%" cellpadding="0" cellspacing="0" border="0">
 	<tr height="5"><td width="5"></td></tr>
 	
-	<tr>
-		<td width="200">질문</td>
-		<td width="100">작성자</td>
-	</tr>
+	
 	
 		<tr height="1" bgcolor="#000000">
 		<td colspan="6"></td></tr>

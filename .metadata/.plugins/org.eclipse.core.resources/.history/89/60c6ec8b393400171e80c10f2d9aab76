@@ -1,0 +1,49 @@
+<%@ page language="java" contentType="text/html; charset=EUC-KR"
+    pageEncoding="EUC-KR"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=EUC-KR">
+<title>게시판</title>
+
+<SCRIPT language="JavaScript">
+function Check() {
+	if(Write.name.value.length < 1) {
+		alert("작성자를 입력하세요");
+		Write.name.focus();
+			return false;
+	}
+	if(Write.pass.value.length < 1) {
+		alert("비밀번호를 입력하세요");
+		Write.name.focus();
+			return false;
+	}
+	
+	if(Write.title.value.length < 1) {
+		alert("제목을 입력하세요.");
+		Write.write_title.focus();
+			return false;
+	}
+	if(Write.contents.value.length < 1) {
+		alert("글 내용을 입력하세요.");
+		Write.content.focus();
+			return false;
+	}
+
+Write.submit();
+}
+</SCRIPT>
+</head>
+
+<body>
+<center> <font size='3'> <b> 게시판 글쓰기 </b></font></center>
+<table border='0' width='500' cellpadding='0' cellspacing='0'>
+	<tr>
+		<td><hr size='1' noshade></td>
+	</tr>
+</table>
+<form Name='write1' action="write_input.jsp" Method='post' onsubmit="return Check()">
+
+
+</body>
+</html>
