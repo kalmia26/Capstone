@@ -12,6 +12,7 @@
 	a:hover	{font-family:""; color:black; text-decoration:underline;}
 -->
 </style>
+
 <script language="JavaScript">
 function Check() {
 	if(Member_input.id.value.length < 1) {
