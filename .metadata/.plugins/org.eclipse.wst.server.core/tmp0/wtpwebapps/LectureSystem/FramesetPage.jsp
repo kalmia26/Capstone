@@ -6,8 +6,8 @@
 <meta http-equiv="Content-Type" content="text/html; charset=EUC-KR">
 <title>Insert title here</title>
 </head>
-	<frameset cols="20%,*">
-		<frame src="List1.jsp" name="left">
+	<frameset cols="25%,*">
+		<frame src="chat_client.html" name="left">
 			<frame src="pptView.jsp" name="raght">
 		</frameset>
 </html>

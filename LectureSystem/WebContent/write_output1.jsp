@@ -97,7 +97,6 @@
 		<tr>
 			<td align='right'>
 				<a href='write1.jsp'>[글쓰기]</a>
-				<a href='listboard.jsp'>[목록보기]</a>
 			</td>
 		</tr>
 	</table>

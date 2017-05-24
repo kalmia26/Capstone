@@ -1,0 +1,45 @@
+<%@ page language="java" contentType="text/html; charset=EUC-KR"
+    pageEncoding="EUC-KR"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=EUC-KR">
+<title>Insert title here</title>
+<style type="text/css">
+<!--
+	a:link	{font-family:""; color:black; text-decoration:none;}
+	a:visited	{font-family:""; color:black; text-decoration:none;}
+	a:hover	{font-family:""; color:black; text-decoration:underline;}
+-->
+</style>
+<script language="JavaScript">
+function Check() {
+	if(Member_input.id.value.length < 1) {
+		alert("아이디를 입력하세요.");
+		Member.id.foucs();
+		return false;
+	}
+	if(Member_input.pass.value.length < 1) {
+		alert("비밀번호를 입력하세요.");
+		Member.pass.focus();
+		return false;
+	}
+	if(Member_input.name.value.length < 1) {
+		alert("이름을 입력하세요.");
+		Member.pass.focus();
+		return false;
+	}
+	if(Member_input.juminnum1.value.length < 1) {
+		alert("주민등록번호를 입력하세요.");
+		Member.pass.focus();
+		return false;
+	}
+	Member.submit();
+}
+</script>
+
+</head>
+<body>
+
+</body>
+</html>

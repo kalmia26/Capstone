@@ -12,7 +12,7 @@
 
 	switch(List) {
 	case "1" :
-		%> <jsp:forward page="List1.jsp" /><%
+		%> <jsp:forward page="chat_client.html" /><%
 		break;
 		
 	case "2" :
