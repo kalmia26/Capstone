@@ -1,10 +1,15 @@
 <%@ page language="java" contentType="text/html; charset=EUC-KR"
     pageEncoding="EUC-KR"%>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html> 
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+"http://www.w3.org/TR/html4/loose.dtd"> <html>> 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=EUC-KR">
-<title> ë‹¤ë·° ì›¹ ìƒ˜í”Œ</title> 
+<title>Insert title here</title>
+</head>
+<body>
+
+<head> 
+<title> ´Ùºä À¥ »ùÇÃ</title> 
 </head> 
 <style> 
 .DaViewWeb{position:absolute;width:1280px;height:1024px;} 
@@ -20,13 +25,15 @@
  <body> 
    <div> 
       <div class="DaViewWeb"> 
-            <input type="button"  value="DaViewProposal.pptx" alt="ë‹¤ë·°ì œì•ˆì„œ" onclick="doOpen
+            <input type="button"  value="DaViewProposal.pptx" alt="´ÙºäÁ¦¾È¼­" onclick="doOpen
             ('http://hmtalk.com/download/DaViewProposal.pptx');") /> 
-            <input type="button" value="ForeignWords.hwp" alt="ì™¸ëž˜ì–´í‘œê¸°"  onclick="doOpen
+            <input type="button" value="ForeignWords.hwp" alt="¿Ü·¡¾îÇ¥±â"  onclick="doOpen
             ('http://hmtalk.com/download/ForeignWords.hwp');") /> 
-            <input type="button"  value="Colorwh.dwg" alt="ì˜¤í† ìºë“œìƒ‰ìƒ"  onclick="doOpen
+            <input type="button"  value="Colorwh.dwg" alt="¿ÀÅäÄ³µå»ö»ó"  onclick="doOpen
             ('http://hmtalk.com/download/Colorwh.dwg');") /> 
       </div> 
    </div> 
  </body> 
+</html>
+</body>
 </html>

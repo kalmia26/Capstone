@@ -1,0 +1,1791 @@
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<!-- meta http-equiv="Content-Type" content="text/html; charset=UTF-8" -->
+<meta charset="UTF-8"> 
+<meta http-equiv="Expires" content="0"/> 
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Cache-Control" content="no-cache"/>
+<meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width" />
+
+<!--<script type="text/javascript" src="http://jsgetip.appspot.com"></script>-->
+<link rel="stylesheet" href="lib/jquery.mobile-1.3.0.min.css" />
+
+<title>DaView Web</title>
+
+<script src="lib/jquery-1.10.0.min.js"></script>
+<script src="lib/jquery.mobile-1.3.0.min.js"></script>
+<script src="lib/spin.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<script type="text/javascript" src="https://l2.io/ip.js?var=userip"></script>
+<p class="l2io"></p>
+<script>
+var isMobile = false;
+var sViewFileDDate = '2017-06-30';
+var sDownType = 'YES';
+var sMsg = '';
+var sPWType = 'NO';
+var nDocMID = 'YES';
+var sPWText = '';
+var sFirst = '';
+
+if (parent) {
+//	parent.shareDate = sViewFileDDate;
+}
+
+var FullScreenChange = true;
+var str = "";
+var doc = new Array();
+var images = new Array();
+var waterMark = null;
+var sFileName = null;
+
+var canvas = new Array();
+var thumb = new Array(); 
+var bDraw = new Array();
+var viewPos = {
+	doc : 0,
+	now : 0,
+	x : 0,
+	y : 0,
+	scale : 1
+}
+
+var openPage = 0;
+
+var click = false;
+var HW = true;
+var px, py, dist, time, direct, scroll=-1;
+var split_txt = '|';
+
+var scrollBound = 50;
+var scaleSensitive=1, moveSensitive=1, flingValue=10;
+var imgAlpha = 0.3;
+var selectColor = '#f00';
+
+var viewIndex = 3;
+var divLeft = 0;
+var divTop = 0;
+
+var total = 0;
+var thumbCount = 0;
+var size = new Array();
+var spinner;
+
+var daviewTitle, daviewCanvas;
+var nowAddress, viewAddress, href, filenames, viewFileNames, docCount;
+filenames = new Array();
+viewFileNames = new Array();
+var thumbDiv = new Array();
+var testCnt = 0;
+var timer;
+
+var mainPageImg = null;
+var mainFileName = null;
+var totalPageCount = 0;
+
+function pingDocument(filename, pageStart, pageCnt){
+	
+	if(sPWType != "NO") {
+
+		var cook = getCookie(filename);
+			
+		var index = cook.indexOf("|");
+		
+		var text = "";
+		var type = "";
+		if(index > -1) {
+			text = cook.substr(0, index);
+			type = cook.substr(index+1);
+		}
+		
+		if(type == "YES") {
+			viewSubmit(text, filename);
+		} else {
+			parent.dvwPasswordDialog(sPWType);
+		}	
+
+	}
+	else if(sMsg != "" && sMsg != null) {
+		alert(sMsg);
+		parent.location.href = "/DaViewWeb";	
+	}
+	else {
+		var cook = getCookie(filename);
+		var index = cook.indexOf("|");
+		var text = "";
+		if(index > -1) {
+			text = cook.substr(0, index);
+			setCookie(filename, text+"|YES", 10);
+		} else {
+			sFirst = cook;	
+		}
+		
+		var s = document.createElement('script');
+	    s.type = 'text/javascript';
+	    charset = 'utf-8';
+	    //alert(href);
+	    s.src = href+ 'mode=json&callback=pongDocument&filename='+filename+"&start="+pageStart+"&count="+pageCnt+"&test="+(testCnt++)+ "&viewname="+encodeURIComponent("140527_\자\몽\자\몽_PPT\템\플\릿_by\홍\양\홍\삼 (1)\.pptx");
+	 
+	    document.getElementById('DaViewFunction').innerHTML = ""
+	    document.getElementById('DaViewFunction').appendChild(s);	
+	}
+}
+
+function pongDocument(json){
+	//alert(json.images[0].name + "/"+ json.images[0].pages + "/" + json.images[0].end)
+	if(json.msg != null){
+		var ref = confirm(json.msg + "\n\n다시 요청을 하시겠습니까?");
+		//alert(ref);
+		if(ref == true){ 
+			 pingDocument(filenames[docCount], 1,5);
+		} else {
+			drawWaterMark("Failed Open Document!!");
+			spinner.stop();			
+		}
+		
+		return;
+	//} else if(total==0 && parent && parent.location.href != document.location.href){
+	} else if(total==0 && parent && parent.location.href){
+//		if(parent.location.href.indexOf("web.daview.kr")<0){
+			
+//		}else{
+			var url = document.location.href;
+			if(url.indexOf("&first=YES")>-1) {
+				url = url.replace("&first=YES", "");
+				var index = url.indexOf("filename=");
+				var filename = url.substr(index+9);
+				if(filename.indexOf("&") > -1) {
+					filename = filename.substr(0, filename.indexOf("&"));
+				}
+				setCookie(filename, "YES", 10);
+			}
+
+			if(url.indexOf("View?Mode=web&filename=")>-1 && url.indexOf(parent.mainPage)<0){
+				url = url.replace("View?Mode=web&filename=", "?f=").replace('page=','p=');
+				var index = url.indexOf("&WaterMark");
+				if(index>-1){
+					url = url.substr(0,index);
+				}
+				if(parent.location.href != url){
+					parent.location.href = url;
+					return;
+				}
+			}
+//		}
+	} else {
+		// jiseong()
+		//$('#upload-file-container').hide();
+		//$('#btnLink').hide();
+	}
+	doc[docCount] = {
+	    name : (viewFileNames[docCount]==null)?json.images[0].name:decodeURI(viewFileNames[docCount]),
+	    path : json.images[0].path,
+		end : json.images[0].end,
+		pages : json.images[0].pages,
+		first : ((doc[docCount]==null)?total:(doc[docCount].first))
+	};
+	
+	var before = total - doc[docCount].first;
+	total = doc[docCount].first +doc[docCount].pages;
+	for(var i=0, j=before; i<json.images[0].size.length; i++, j++){ 
+		var count = doc[docCount].first + j;
+
+		size[count] = {
+			width : parseInt(json.images[0].size[i].width),
+			height : parseInt(json.images[0].size[i].height)
+		};
+		
+		images[count] = href + "mode=Image&FileName=" + doc[docCount].path +'&page='+(j+1) + "&viewname=140527_\자\몽\자\몽_PPT\템\플\릿_by\홍\양\홍\삼 (1)\.pptx";
+		if(count == 3){
+			loadImage(count);
+		}
+		
+		thumb[count] = href + "mode=Image&format=thumb&FileName=" + doc[docCount].path +'&page='+(j+1)+ "&viewname=140527_\자\몽\자\몽_PPT\템\플\릿_by\홍\양\홍\삼 (1)\.pptx";
+		loadThumb(count);
+	}
+	if(doc[docCount].end == 0){
+	} else {
+		FileList(doc[docCount].name, doc[docCount].first);
+		docCount++;
+	}
+	
+	if(filenames.length > docCount) {
+		setTimeout(function(){
+			pingDocument(filenames[docCount], (doc[docCount])?(doc[docCount].pages+1):1,5);
+		}, 100);
+	} else {
+		totalPageCount = total;
+	}
+	
+	if(before == 0){ 
+		//loadThumb(0); 
+		thumbBorder(viewPos.now, '2px solid ' + selectColor);
+	}
+	
+    refresh();
+}
+
+$(document).ready(function() {
+    daviewTitle = document.getElementById("DaViewTitle");
+	$('#DaViewFileListDiv').hide();
+	$('#btnFileList').hide();
+	
+	$('#DaViewLeft').hide();
+	$('#DaViewRight').hide();
+	
+    nowAddress = location.href;
+    href = nowAddress.substr(0,nowAddress.indexOf('?')+1);
+    
+    var parameters = (nowAddress.slice(nowAddress.indexOf('?')+1,nowAddress.length)).split('&');
+    for(var i = 0 ; i < parameters.length ; i++){
+        var varName = parameters[i].split('=')[0];
+        //if(varName.toUpperCase() == "WATERMARK"){
+        	//waterMark = 'Copyright©2014,(주)휴먼토크'; //decodeURI(parameters[i].split('=')[1]);
+       // } else
+		if(varName.toUpperCase() == "FILENAME"){
+        	var tName = parameters[i].substr(9);
+        	if(tName.indexOf('%7C') > -1) { split_txt = '%7C'; }
+        	filenames = tName.split(split_txt);
+			sFileName = parameters[i].split('=')[1];
+        } else if(varName.toUpperCase() == "VIEWFILENAME"){
+        	var tName = parameters[i].substr(13);
+        	if(tName.indexOf('%7C') > -1) { split_txt = '%7C'; }
+        	viewFileNames = tName.split(split_txt);
+        } else if(varName.toUpperCase() == "MODE"){
+        } else if(varName.toUpperCase() == "PAGE"){
+			openPage = parameters[i].split('=')[1] - 1;
+        } else {
+            href += parameters[i]+"&";
+        	//alert(filenames);
+        }
+    }
+    waterMark = 'Copyright©2016,(주)휴먼토크'; //decodeURI(parameters[i].split('=')[1]);
+
+	if (filenames.length > 1) {
+		$('#btnFileList').show();			
+	} else if(filenames.length > 0){
+		var opts = {
+				  lines: 9, // The number of lines to draw
+				  length: 25, // The length of each line
+				  width: 21, // The line thickness
+				  radius: 41, // The radius of the inner circle
+				  corners: 1, // Corner roundness (0..1)
+				  rotate: 0, // The rotation offset
+				  direction: 1, // 1: clockwise, -1: counterclockwise
+				  color: '#fff', // #rgb or #rrggbb
+				  speed: 1, // Rounds per second
+				  trail: 57, // Afterglow percentage
+				  shadow: false, // Whether to render a shadow
+				  hwaccel: false, // Whether to use hardware acceleration
+				  className: 'spinner', // The CSS class to assign to the spinner
+				  zIndex: 2e9, // The z-index (defaults to 2000000000)
+				  top: 'auto', // Top position relative to parent in px
+				  left: 'auto' // Left position relative to parent in px
+				};
+			var target = document.getElementById('DaViewProgress');
+			spinner = new Spinner(opts).spin(target);
+			setTitle();
+	}
+    docCount = 0;
+    pingDocument(filenames[0],1,5);
+
+	
+	mainFileName = "140527_\자\몽\자\몽_PPT\템\플\릿_by\홍\양\홍\삼 (1)\.pptx";
+	mainPageImg  = href + "mode=Image&format=thumb&FileName=" + filenames[0] +"&page=1&viewname=140527_\자\몽\자\몽_PPT\템\플\릿_by\홍\양\홍\삼 (1)\.pptx";
+    
+    $(document).mousedown(function(event){
+        if(event.which == 2 || event.which == 3 )
+            return;
+    });
+    document.oncontextmenu = function(){return false};
+    document.ondragstart = function(){return false};
+    document.onselectstart = function(){return false};
+
+    if (typeof document.body.onselectstart != 'undefined') { document.body.onselectstart = function(){ return false; } }
+    // FireFox
+    else if (typeof document.body.style.MozUserSelect != 'undefined') { document.body.style.MozUserSelect = 'none'; }
+    
+    //daviewTitle.innerHTML = doc[viewPos.doc].name + " <br/>( 0 / " + total + " )";
+    
+    for(i = 1; i<=5; i++){
+        canvas[i] = $('#DaViewCanvas'+i);
+        bDraw[i] = false;
+    }
+    //onLoadImage();
+    
+    daviewCanvas = document.getElementById('DaViewCanvasDiv');
+    if(daviewCanvas.addEventListener){
+        document.getElementById('DaViewCanvasView').addEventListener('mousedown', function(event){
+	    	if(event.which == 1 ) {touchStart(event.pageX, event.pageY);}
+	    }, false);
+	    document.body.addEventListener('mousemove', function(event){
+	        dragCanvas(event.pageX, event.pageY);
+	        if(!FullScreenChange) {
+		        document.body.style.cursor = "pointer";
+		        clearInterval(timer);
+		        timer = setInterval(function () {
+				//setTimeout(function() {
+					document.body.style.cursor = "none";
+				}, 3000);
+	        }
+	    }, false);
+	    document.body.addEventListener('mouseup', dragEnd, false);
+		
+	    $('#DaViewCanvasView')[0].addEventListener('touchstart', function(event){
+	        event.preventDefault();
+	        touchStart(event.touches[0].pageX, event.touches[0].pageY);
+	    }, false);
+	    $('body')[0].addEventListener('touchmove', function(event){
+	    	if(event.touches.length > 1){ zoomCanvas(event.touches[0].pageX, event.touches[0].pageY, event.touches[1].pageX, event.touches[1].pageY);}
+	    	else { dragCanvas(event.touches[0].pageX, event.touches[0].pageY);}
+	        	//dragCanvas(event.touches[0].pageX, event.touches[0].pageY);
+	    }, false);
+	    $('body')[0].addEventListener('touchend', dragEnd, false);
+	    
+	    $('body')[0].addEventListener('touchcancel', function(event){
+	    }, false);
+	    
+/*
+jiseong
+		document.addEventListener("fullscreenchange", function () {
+			notFullScreen(document.fullscreen);
+		}, false);
+		
+		document.addEventListener("mozfullscreenchange", function () {
+			notFullScreen(document.mozFullScreen);
+		}, false);
+		
+		document.addEventListener("webkitfullscreenchange", function () {
+			notFullScreen(document.webkitIsFullScreen);
+		}, false);
+		
+		document.addEventListener("MSFullscreenChange", function () {
+			notFullScreen(document.msFullscreenElement);
+		}, false);
+*/
+	} else {
+	    document.getElementById('DaViewCanvasView').onmousedown = function(){
+	        var event = window.event;
+	        touchStart(event.clientX, event.clientY);
+	    }
+	    daviewCanvas.onmousedown = function(){
+	        var event = window.event;
+	        touchStart(event.clientX, event.clientY);
+	    }
+	    document.body.onmousemove = function(){
+	        var event = window.event;
+	        dragCanvas(event.clientX, event.clientY);
+	    }
+	    document.body.onmouseup = dragEnd;
+	}
+	
+    setSize();
+    window.onresize = setSize;
+    $('body').onresize = setSize;
+    
+    if ($("#DaViewWaterMark")[0].style.MozUserSelect) $("#DaViewWaterMark")[0].style.MozUserSelect = 'none';
+    
+    if( navigator.platform  ){
+    	//alert(navigator.platform);
+    	if( "Win16|Win32|Win64|MacIntel".indexOf(navigator.platform.toLowerCase())<0 ){
+        	if("iPhone|iPad".indexOf(navigator.platform.toLowerCase())<0){
+        		//$('#DaViewClose').hide();
+        	}
+        }else{
+            daviewTitle.style.fontSize = '10pt'
+        }
+    }
+   //var btnPrint = document.getElementById('btnPrint');
+    //if(btnPrint){
+		//btnPrint.onclick = function (event) {
+		document.getElementById('btnPrint').onclick = function (event){
+    	
+			if(total > 0) {
+				var myForm = document.openForm;
+				var popUrl = "View";
+			//window.open('View?Mode=Print&FileName=' + sFileName, '', 'scrollbars=no,status=no,resizable=no,visibility=hidden');
+				window.open('View?Mode=Print&FileName=' + sFileName ,'openForm', 
+				'scrollbars=no,status=no,resizable=no,visibility=hidden');
+				//abc.document.body.innerHTML = "HTML
+				myForm.action = popUrl; 
+				myForm.method="post";
+				myForm.target="openForm";
+				myForm.mode.value = "Print";
+				myForm.submit();
+			}
+		}
+	
+//	document.getElementById('btnPrint').onclick = function (event)
+//		if(total > 0) { {
+//			window.open('View?Mode=Print&FileName=' + sFileName, '', 'scrollbars=no,status=no,resizable=no,visibility=hidden');
+//		}
+//	}
+
+//document.getElementById('btnPrint').onclick = function (event) {
+
+//window.print(); }
+
+// jiseong 
+
+	if(!isMobile){
+		$("#DaViewTop").hover(
+			function() {
+	//			$("#DaViewTop").animate({left: 0}, 500 );
+				alpha($('#DaViewTop')[0], 0.97);
+			},
+			function() {
+	//			$("#DaViewTop").animate({left: '-'+($("body").width()-30)}, 500 );
+				alpha($('#DaViewTop')[0], 0.5);
+			}
+		);
+
+	/*
+		$("#DaViewTop").mouseover(function(){ 
+			alpha($('#DaViewTop')[0], 0.97);		
+		});
+		$("#DaViewTop").mouseout(function(){ 
+			alpha($('#DaViewTop')[0], 0.5);		
+		});
+	*/
+		//$("#DaViewThumbDiv").click(function(){ });
+
+		$("#DaViewThumbDiv").hover(
+			function() {
+	/* 			$("#DaViewThumbDiv").animate({left: 0}, 500 ); */
+				alpha($('#DaViewThumbDiv')[0], 0.97);
+			},
+			function() {
+	/* 			$("#DaViewThumbDiv").animate({left: '-'+($("body").width()-30)}, 500 ); */
+				alpha($('#DaViewThumbDiv')[0], 0.5);
+			}
+		);
+	} else {
+		alpha($('#DaViewTop')[0], 0.8);
+		alpha($('#DaViewThumbDiv')[0], 0.8);
+	}
+
+	var fileInput = document.getElementById('uploadFile');
+	document.getElementById('btnFileOpen').onclick = function (event) {
+		fileInput.click()
+	}
+	document.getElementById('uploadFile').onchange = function (event) {
+		
+		//alert(document.getElementById('uploadFile').value);
+		var filename = comChk_mExtract_FileName(document.getElementById('uploadFile').value);
+		var actionURL = 'FileUpload?ip=' + userip + '&filepath='// + encodeURIComponent(filename);
+		//alert(actionURL);
+
+		//uploadForm.filepath.value = filename;
+		document.getElementById('uploadForm').action = actionURL;
+		//document.getElementById('filepath').value = filename;
+		document.getElementById('uploadForm').submit();
+		//uploadForm.action = actionURL;
+		//uploadForm.submit();
+		
+
+/*
+		document.uploadForm.action = actionURL;
+		document.uploadForm.submit();
+*/
+
+/* 		$('#uploadForm').attr('action', actionURL).submit(); */
+/*
+		document.uploadForm.action = actionURL;
+		document.uploadForm.submit();
+*/
+	}
+/*
+	document.getElementById('uploadForm').onsubmit = function() {
+		
+		var filename = comChk_mExtract_FileName(document.getElementById('uploadFile').value);
+		
+		if (fileInput.files != undefined) {
+			var file = fileInput.files[0];
+			alert(file);
+			var formData = new FormData();
+			formData.append("upload_file", file);
+			
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "FileUpload", true);
+			xhr.onreadystatechange = function() {
+				if(xhr.readyState == 4 && xhr.status == 200) {
+					alert("file upload ok!");
+				}
+			}
+			xhr.onprogress = function(event) {
+				console.log("file upload % = " + (event.loaded / event.tatal) + "%");
+			}
+			xhr.send(formData);
+			//return false;
+		}
+	}
+*/
+	if (sDownType == "YES") {
+		document.getElementById('btnSave').onclick = function (event) {
+			var index = location.href.indexOf("filename=");
+			var filename = location.href.substr(index+9);
+			var sURL = "View?Mode=save&filename="+ filename;
+			//alert(sURL);		
+			location.href = sURL;
+		}
+	}
+		
+	document.getElementById('btnFull').onclick = function (event) {
+		fullWin();
+	}
+	// 페이지 컨트롤
+	document.getElementById('btnFirstPage').onclick = function (event) {
+		movePage(0);		
+	}
+	document.getElementById('btnLastPage').onclick = function (event) {
+		movePage(images.length - 1);
+	}
+	document.getElementById('btnLeftPage').onclick = function (event) {
+		movePrev();
+	}
+	document.getElementById('btnRightPage').onclick = function (event) {
+		moveNext();
+	}
+	document.getElementById('btnGoPage').onclick = function (event) {
+		GoPage();
+	}
+    document.getElementById('btnZoomIn').onclick = function (event) {
+		if (viewPos.scale < 3){
+			viewPos.scale = viewPos.scale * 1.5;
+	        divTop=0;
+		    setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+			setCanvasDivSize();
+		}
+	}
+	document.getElementById('btnZoomOut').onclick = function (event) {
+		if (viewPos.scale > 1){
+			viewPos.scale = viewPos.scale / 1.5;
+	        divTop=0;
+		    setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+			setCanvasDivSize();
+		}
+	}
+	document.getElementById('btnFileList').onclick = function (event) {
+			if($('#DaViewFileListDiv').css("display") == "none"){
+	            $('#DaViewFileListDiv').show(); 
+	        } else {
+	            $('#DaViewFileListDiv').hide();
+	        }
+	}
+	document.getElementById('btnHeight').onclick = function (event) {
+		HW = true;
+		zoomScale();
+		setSize();
+		//setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+		//setCanvasDivSize();
+	}
+	document.getElementById('btnWidth').onclick = function (event) {
+		HW = false;
+		zoomScale();
+		setSize();
+		//setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+		//setCanvasDivSize();
+	}
+
+	if(parent.dvwOpenShareDialog){
+		document.getElementById('btnLink').onclick = parent.dvwOpenShareDialog;
+	} else {
+		document.getElementById('btnLink').onclick = function (event) {
+
+			var url = document.location.href;
+			url = url.replace("View?Mode=web&filename=", "?f=");
+			
+			var IE = (document.all) ? true : false ;
+			if(IE) {
+				window.clipboardData.setData("Text", url);
+				alert("클립보드에 URL이 복사되었습니다.\n\nCtrl+V (붙여넣기) 단축키를 이용하시면,\nURL을 붙여 넣으실 수 있습니다.");
+			} else {
+				var temp = prompt("Ctrl+C를 눌러 클립보드로 복사하세요", url);
+			}
+		}
+	}
+
+	$('#DaViewThumb').width(4);
+});
+
+//dragEnd()
+     
+   $(document).ready(function() {
+	
+    $(document).mousedown(function(event){
+        if(event.which == 2 || event.which == 3 )
+            return;
+    });
+
+    if(daviewCanvas.addEventListener){
+        
+	    document.body.addEventListener('mousemove', function(event){
+	        dragCanvas(event.pageX, event.pageY);
+	        if(!FullScreenChange) {
+		        document.body.style.cursor = "pointer";
+		        clearInterval(timer);
+		        timer = setInterval(function () {
+				}, 3000);
+	        }
+	    }, false);
+	    document.body.addEventListener('mouseup', dragEnd1, false);
+		
+	    $('#DaViewCanvasView')[0].addEventListener('touchstart', function(event){
+	        event.preventDefault();
+	        touchStart(event.touches[0].pageX, event.touches[0].pageY);
+	    }, false);
+	    $('body')[0].addEventListener('touchmove', function(event){
+	    	if(event.touches.length > 1){ zoomCanvas(event.touches[0].pageX, event.touches[0].pageY, event.touches[1].pageX, event.touches[1].pageY);}
+	    	else { dragCanvas(event.touches[0].pageX, event.touches[0].pageY);}
+	       
+	    }, false);
+	    $('body')[0].addEventListener('touchend', dragEnd1, false);
+	    
+	    $('body')[0].addEventListener('touchcancel', function(event){
+	    }, false);
+	    
+	} else {
+	    document.getElementById('DaViewCanvasView').onmousedown = function(){
+	        var event = window.event;
+	        touchStart(event.clientX, event.clientY);
+	    }
+	    daviewCanvas.onmousedown = function(){
+	        var event = window.event;
+	        touchStart(event.clientX, event.clientY);
+	    }
+	    document.body.onmousemove = function(){
+	        var event = window.event;
+	        dragCanvas(event.clientX, event.clientY);
+	    }
+	    document.body.onmouseup = dragEnd1;
+	} 
+
+});
+
+
+var testing = true;
+function notFullScreen(screen) {
+	
+	if(screen) {
+		testing = HW;
+		HW = true;
+		zoomScale();
+		setSize(); 
+		
+		$('#DaViewLeft').hide();
+		$('#DaViewRight').hide();
+		
+/* 		setCanvasHover(viewIndex, 0.01); */
+		imgAlpha = 0.01;
+		refresh()
+		
+		FullScreenChange = false; 
+		hideBar(); 
+		document.body.style.cursor = "pointer";
+	} else {
+		HW = testing;
+		testing = true;
+		zoomScale();
+		setSize(); 
+		
+		$('#DaViewLeft').show();
+		$('#DaViewRight').show();
+		
+/* 		setCanvasHover(viewIndex, 0.03); */
+		imgAlpha = 0.03;
+		refresh();
+	 
+		clearInterval(timer);
+		FullScreenChange = true; 
+		showBar(); 
+		document.body.style.cursor = "default";
+	}
+}
+
+
+function setCanvasHover(nIndex, value) {
+	alpha(canvas[getPrevNumber(getPrevNumber(nIndex))][0], value);
+	alpha(canvas[getPrevNumber(nIndex)][0], 0.01);
+	alpha(canvas[getNextNumber(nIndex)][0], 0.01);
+	alpha(canvas[getNextNumber(getNextNumber(nIndex))][0], value);
+} // jiseong
+
+function alpha(obj, value) {
+	var filter = "alpha(opacity="+(value*100)+")";
+	//$('#DaViewTop').style.filter.alpha.opacity = 10;
+	obj.style.filter = filter;
+	obj.style.opacity = value;
+}
+
+function zoomScale() {
+	if (viewPos.scale > 1){
+		viewPos.scale = 1;
+        divTop=0;
+	    setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+		setCanvasDivSize();
+	}
+}
+
+function comChk_mExtract_FileName( str ){
+	   
+	   var len = str.length;
+	   var last = str.lastIndexOf("\\");
+	   
+	   var ext = str.substring(last + 1, len);  
+	   return ext;
+	}
+
+function touchStart(x, y){    
+    var t = new Date;
+
+	if((px-$('body').width()/2 < divLeft - canvas[viewIndex].width()/2 + 50)||
+		(px -$('body').width()/2 > divLeft + canvas[viewIndex].width()/2 - 50)){
+		click = true;
+	}
+
+    if((!click && t-time<300) && FullScreenChange){
+		
+		if(viewPos.scale != 1){
+			viewPos.scale = 1;
+	    } else {
+		    viewPos.scale = 2;
+		}
+	    divTop=0;
+		setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+		setCanvasDivSize();
+		
+        time = -1;
+    } else {
+        time = t;
+    }
+
+    if(y > $('body').height()-scrollBound){
+        //dragScroll(x, y)
+    }
+    
+    click = true;
+    
+    px = x;
+    py = y;
+    direct = 0;
+    dist = -1;
+    return false;
+}
+
+function dragEnd(){
+	if(FullScreenChange) {
+		var t = new Date;
+	    if(t-time<150 && Math.abs(direct) < flingValue){
+	        tempTime = time;
+	        if(px-$('body').width()/2 < divLeft - canvas[viewIndex].width()/2 + 90){
+	            movePrev();
+	        } else if(px -$('body').width()/2 > divLeft + canvas[viewIndex].width()/2 - 90){
+	            moveNext();
+	        } else if($('#DaViewTop').css("display") == "none"){
+	            setTimeout(function() { 
+	                if(tempTime == time){ showBar(); } 
+	            }, 300);
+	        } else {
+	            setTimeout(function() { 
+	                if(tempTime == time){ hideBar(); } 
+	            }, 300);
+	        }
+	    } else if(scroll > 0 && py > $('body').height()-scrollBound ){
+	        viewPos.scale = 1;
+	        movePage(scroll-1)
+	    }
+	} else {
+		if(px-$('body').width()/2 < divLeft - canvas[viewIndex].width()/2 + 90){
+			movePrev();   
+		} else {
+			moveNext();
+		}
+	}
+    
+    /* $("#DaViewScroll").hide(); */
+    click = false;
+    scroll = -1;
+	direct = 0;
+    flingImage()
+    return true;
+}
+function dragEnd1(){
+
+    click = false;
+    scroll = -1;
+	//direct = 0;
+    flingImage()
+    return true;
+}
+function dragCanvas(x, y){
+    if(!click){ return; } 
+    else if(scroll>0){
+        if(y > $('body').height()-scrollBound) { 
+        	//dragScroll(x, y); 
+        }
+        else { /* $("#DaViewScroll").hide(); */ }
+    } else {
+        direct = x-px;
+        divLeft += direct;
+        var defaultLeft = ($('body').width()/2-canvas[viewIndex].width()/2-canvas[getPrevNumber(viewIndex)].width()-canvas[getPrevNumber(getPrevNumber(viewIndex))].width()-50);
+    	$('#DaViewCanvasDiv')[0].style.left = (defaultLeft+divLeft) + "px";
+        if(canvas[viewIndex].height() > $('body').height()){
+	        divTop += y-py;
+	        if(HW){
+	        	if(divTop < -(canvas[viewIndex].height()-$('body').height())/2){
+		            divTop = -(canvas[viewIndex].height()-$('body').height())/2;
+		        } else if(divTop > (canvas[viewIndex].height()-$('body').height())/2){
+		            divTop = (canvas[viewIndex].height()-$('body').height())/2;
+		        }
+		        defaultTop = (($('body').height()-canvas[viewIndex].height())/2);
+	        } else {
+	        	if(divTop < -(canvas[viewIndex].height()-$('body').height())){
+		            divTop = -(canvas[viewIndex].height()-$('body').height());
+		        } else if(divTop > 0){
+		            divTop = 0;
+		        }
+		        if ($('body').height() > canvas[viewIndex].height()) {
+	    			defaultTop = (($('body').height()-canvas[viewIndex].height())/2);	
+	    		} else {
+	    			defaultTop = 0;
+	    		}
+	        }
+	        
+	    	canvas[viewIndex][0].style.top = (defaultTop+divTop) + "px";
+        }
+    }
+	px = x;
+    py = y;
+}
+var testest = 1;
+function zoomCanvas(x1, y1, x2, y2){
+    if(!click){ return; }
+    var distX = (x1-x2)/canvas[viewIndex].width();
+    var distY = (y1-y2)/canvas[viewIndex].height();
+    var distT =  Math.sqrt(distX*distX+distY*distY);
+    if(dist >= 0 && testest==1){
+        viewPos.scale *= (distT/dist)*scaleSensitive;
+        if(viewPos.scale<1){ viewPos.scale = 1; }
+
+        setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+		setCanvasDivSize();
+		//daviewTitle.innerHTML = "px="+px +"/py="+py+"/<br/>scale="+viewPos.scale+"/"+(distT/dist);
+    }
+
+    px = x1 + (x2-x1)/2/viewPos.scale;
+    py = y1 + (x2-x1)/2/viewPos.scale;
+    dist = distT;
+    if(viewPos.scale == 1){ divTop = 0; }
+    testest *= -1;
+}
+
+/* 
+function dragScroll(x, y){
+    scroll = parseInt(x / $('body').width() * total +1);
+    $("#DaViewScroll").show();
+    $("#DaViewScroll")[0].innerHTML = scroll + " / " + total;
+}
+*/
+function setSize(){
+	//alert(viewPos.sacle*canvas[viewIndex].height()/canvas[viewIndex].width());
+	//alert(canvas[viewIndex].width());
+
+	setCanvasSize(getPrevNumber(getPrevNumber(viewIndex)), viewPos.now-2,1);
+    setCanvasSize(getPrevNumber(viewIndex), viewPos.now-1,1);
+    setCanvasSize(viewIndex, viewPos.now,viewPos.scale);
+    setCanvasSize(getNextNumber(viewIndex), viewPos.now+1,1);
+    setCanvasSize(getNextNumber(getNextNumber(viewIndex)), viewPos.now+2,1);
+    setCanvasDivSize();
+	divLeft = 0;
+	divTop = 0;
+}
+
+function getPrevNumber(index){
+    return (index==1)?5:index-1;
+}
+
+function getNextNumber(index){
+    return (index==5)?1:index+1;
+}
+
+function thumbBorder(index, str){
+	thumb[index].style.border = str;
+}
+
+function movePrev(){
+	divLeft = 0;
+	divTop = 0;
+    if(viewPos.now > 0){
+        viewPos.scale = 1;
+        $('#DaViewCanvas')[0].removeChild(canvas[getPrevNumber(getPrevNumber(viewIndex))][0])
+        $('#DaViewCanvas')[0].removeChild(canvas[getPrevNumber(viewIndex)][0])
+        $('#DaViewCanvas')[0].removeChild(canvas[viewIndex][0])
+        $('#DaViewCanvas')[0].removeChild(canvas[getNextNumber(viewIndex)][0])
+        $('#DaViewCanvas')[0].appendChild(canvas[getPrevNumber(getPrevNumber(viewIndex))][0])
+		$('#DaViewCanvas')[0].appendChild(canvas[getPrevNumber(viewIndex)][0])
+		$('#DaViewCanvas')[0].appendChild(canvas[viewIndex][0])
+		$('#DaViewCanvas')[0].appendChild(canvas[getNextNumber(viewIndex)][0])
+
+	    //thumb[viewPos.now].style.backgroundColor = "";
+		thumbBorder(viewPos.now, "");
+		setCanvasSize(viewIndex,viewPos.now, 1)
+        
+        viewPos.now --;
+		viewIndex = getPrevNumber(viewIndex);
+		bDraw[getPrevNumber(getPrevNumber(viewIndex))] = false;
+	    //thumb[viewPos.now].style.backgroundColor = selectColor;
+		//thumb[viewPos.now].style.border= '2px solid ' + selectColor;
+		thumbBorder(viewPos.now, '2px solid ' + selectColor);
+	}
+	thumbScroll();
+    refresh();
+}
+
+function moveNext(){
+	divLeft = 0;
+	divTop = 0;
+    if(viewPos.now < images.length-1){
+        viewPos.scale = 1;
+   		$('#DaViewCanvas')[0].removeChild(canvas[getPrevNumber(getPrevNumber(viewIndex))][0])
+		$('#DaViewCanvas')[0].appendChild(canvas[getPrevNumber(getPrevNumber(viewIndex))][0])
+		
+	    //thumb[viewPos.now].style.backgroundColor = "";
+		thumbBorder(viewPos.now, "");
+		setCanvasSize(viewIndex,viewPos.now, 1)
+		
+        viewPos.now ++;
+		viewIndex = getNextNumber(viewIndex);
+		bDraw[getNextNumber(getNextNumber(viewIndex))] = false;
+	    //thumb[viewPos.now].style.backgroundColor = selectColor;
+		thumbBorder(viewPos.now, '2px solid ' + selectColor);
+    }
+	thumbScroll();
+    refresh();
+}
+
+function movePage(index){
+    if(index > -1 && index < thumb.length) {
+        divLeft = 0;
+   		divTop = 0;
+
+	    //thumb[viewPos.now].style.backgroundColor = "";
+		thumbBorder(viewPos.now, "");
+
+		setCanvasSize(viewIndex,viewPos.now, 1)
+        viewPos.now = index;
+		//alert(viewPos.now)
+        for(i=0; i<=5; i++){
+            bDraw[i] = false;
+        }
+        
+	    //thumb[index].style.backgroundColor = selectColor;
+		thumbBorder(index, '2px solid ' + selectColor);
+		thumbScroll();
+        refresh();
+    }
+}
+
+function loadImage(index){
+	if(images.length<=index){
+	} else if(images[index].src){
+    } else {
+        var temp = images[index];
+            
+        images[index] = new Image();
+		images[index].id = "img"+index;
+		images[index].src = temp;
+		images[index].onload = function(){ 
+			refresh();
+    		if(this.id == "img0") { spinner.stop();} 
+    	}
+    }
+}
+
+function loadThumb(tIndex){
+        var div = document.createElement('div');
+		div.innerHTML = (tIndex+1);
+			
+		var thumbImg = new Image();
+		thumbImg.src = thumb[tIndex];
+		thumbImg.height = 70;
+		thumbImg.width = size[tIndex].width * thumbImg.height/size[tIndex].height;
+		thumbImg.style.backgroundColor = "#000";
+		thumbImg.onload = function(){ 
+			this.height = 70;
+			this.width = size[tIndex].width * thumbImg.height/size[tIndex].height;
+			//loadThumb(tIndex+1); 
+		}
+		
+	    $('#DaViewThumb').width($('#DaViewThumb').width()+thumbImg.width+10);
+	    	    
+	    thumb[tIndex] = document.createElement('div');
+	    thumb[tIndex].id = "thumb"+tIndex;
+	    thumb[tIndex].style.padding = "5px";
+	    thumb[tIndex].style.styleFloat = 'left';
+	    thumb[tIndex].style.cssFloat = 'left';
+	    
+	    thumb[tIndex].appendChild(div)
+	    thumb[tIndex].appendChild(thumbImg);
+	    
+		$('#DaViewThumb')[0].appendChild(thumb[tIndex]);
+	    thumb[tIndex].onclick = function(){
+	        movePage(parseInt(this.id.substr(5)));
+	    }
+
+		if(tIndex == openPage){
+			movePage(openPage);
+			//loadImage(count);
+		}
+}
+
+function onLoadImage(){
+    var nowAddress = unescape(location.href);
+    var href = (nowAddress.indexOf('?')>0)?nowAddress.substr(0,nowAddress.indexOf('?')+1):nowAddress;
+    
+    var parameters = (nowAddress.slice(nowAddress.indexOf('?')+1,nowAddress.length)).split('&');
+    for(var i = 0 ; i < parameters.length ; i++){
+        var varName = parameters[i].split('=')[0];
+        if(varName.toUpperCase() == "MODE"){
+			href += "mode=Image&";
+		} else if(varName.toUpperCase() != "FILENAME"){
+            href += parameters[i]+"&";
+        } 
+    }
+    
+    var thumbDiv = new Array();
+    $('#DaViewThumb').width(0);
+    count=0;
+	for(i=0; i<doc.length; i++){
+		for(j = 0 ; j < doc[i].pages; j ++ ){
+		    images[count] = href + "filename=" + doc[i].path +'&page='+(j+1);
+		    if(count < 5){
+		        loadImage(count)
+		    }
+			
+			var div = document.createElement('div');
+			div.innerHTML = (count+1);
+			
+			var thumbImg = new Image();
+			thumbImg.src = href + "filename=" + doc[i].path +'&format=thumb&page='+(j+1);
+			thumbImg.height = 70;
+			thumbImg.width = size[count].width * thumbImg.height/size[count].height;
+			thumbImg.style.backgroundColor = "#000";
+			
+		    $('#DaViewThumb').width($('#DaViewThumb').width()+thumbImg.width+10)
+		    	    
+		    thumb[count] = document.createElement('div');
+		    thumb[count].id = "thumb"+count;
+		    thumb[count].style.padding = "5px";
+		    thumb[count].style.styleFloat = 'left';
+		    thumb[count].style.cssFloat = 'left';
+		    
+		    thumb[count].appendChild(div)
+		    thumb[count].appendChild(thumbImg);
+		    
+			$('#DaViewThumb')[0].appendChild(thumb[count]);
+
+		    thumb[count].onclick = function(){
+		        movePage(parseInt(this.id.substr(5)));
+		    }
+			count ++;
+		}
+		if(doc[i].end == 0){
+		    images[count] = "Img/ing.jpg";
+
+			var div = document.createElement('div');
+			div.innerHTML = (count+1);
+			
+			var thumbImg = new Image();
+			thumbImg.src = "Img/ing.jpg";
+			thumbImg.height = 70;
+			thumbImg.width = size[count].width * thumbImg.height/size[count].height;
+			thumbImg.style.backgroundColor = "#000";
+			
+		    $('#DaViewThumb').width($('#DaViewThumb').width()+thumbImg.width+10)
+		    
+		    thumb[count] = document.createElement('div');
+		    thumb[count].id = "thumb"+count;
+		    thumb[count].style.padding = "5px";
+		    thumb[count].style.styleFloat = 'left';
+		    thumb[count].style.cssFloat = 'left';
+		    
+		    thumb[count].appendChild(div)
+		    thumb[count].appendChild(thumbImg);
+		    
+			$('#DaViewThumb')[0].appendChild(thumb[count]);
+
+		    thumb[count].onclick = function(){
+		        movePage(parseInt(this.id.substr(5)));
+		    }
+		    count ++;
+		}
+	}
+	thumb[viewPos.now].style.backgroundColor = selectColor;
+}
+
+function setCanvasDivSize(){
+	$('#DaViewCanvasDiv').width(canvas[1].width()+canvas[2].width()+canvas[3].width()+canvas[4].width()+canvas[5].width() + 250)
+	//divLeft = 0;
+	var defaultLeft = ($('body').width()/2-canvas[viewIndex].width()/2-canvas[getPrevNumber(viewIndex)].width()-canvas[getPrevNumber(getPrevNumber(viewIndex))].width()-50);
+	$('#DaViewCanvasDiv')[0].style.left = (defaultLeft+divLeft) + "px";
+	drawWaterMark(waterMark);
+	
+	drawLRBtn();
+}
+
+function setCanvasSize(nIndex, nImg, scale){
+    if(nImg > -1 && nImg < images.length){
+    	var asp1 = ($('body').width()) / ($('body').height()-20);
+	    var asp2 = size[nImg].width / size[nImg].height;
+	    if(asp1 > asp2){
+	        images[nImg].height = (($('body').height()-20)*scale);
+	        images[nImg].width = (($('body').height())*asp2*scale);
+	    } else {
+	        images[nImg].width = (($('body').width())*scale);
+		    images[nImg].height = (($('body').width())/asp2*scale);
+	    }
+        canvas[nIndex].width(images[nImg].width);
+        canvas[nIndex].height(images[nImg].height);
+    } else {
+        canvas[nIndex].width(0);
+    }
+	if(HW){
+		if(nImg > -1 && nImg < images.length){
+	    	var asp1 = ($('body').width()) / ($('body').height()-20);
+		    var asp2 = size[nImg].width / size[nImg].height;
+		    if(asp1 > asp2){
+		        images[nImg].height = (($('body').height()-20)*scale);
+		        images[nImg].width = (($('body').height())*asp2*scale);
+		    } else {
+		        images[nImg].width = (($('body').width())*scale);
+			    images[nImg].height = (($('body').width())/asp2*scale);
+		    }
+	        canvas[nIndex].width(images[nImg].width);
+	        canvas[nIndex].height(images[nImg].height);
+	    } else {
+	        canvas[nIndex].width(0);
+	    }
+	    defaultTop = (($('body').height()-canvas[nIndex].height())/2);
+	} else {
+		if(nImg > -1 && nImg < images.length){
+    		var asp2 = size[nImg].width / size[nImg].height;
+		    images[nImg].width = (($('body').width())*scale);
+			images[nImg].height = (($('body').width())/asp2*scale);
+		    
+			canvas[nIndex].width(images[nImg].width);
+	        canvas[nIndex].height(images[nImg].height);
+	    } else {
+	        canvas[nIndex].width(0);
+	    }
+
+	    if (canvas[nIndex].width() > canvas[nIndex].height()) {
+	    	defaultTop = (($('body').height()-canvas[nIndex].height())/2);	
+	    } else {
+	    	defaultTop = 0;
+	    }
+	}
+    canvas[nIndex][0].style.top = (defaultTop+((nIndex==viewIndex)?divTop:0)) + "px";
+    //alert(canvas[nIndex][0].style.top);
+}
+
+function setTitle(){
+	if(filenames.length == 0){
+		return;
+	} else 
+	if(doc[viewPos.doc] == null){
+		daviewTitle.innerHTML = "Now Loading..."
+		//alert(daviewTitle.innerHTML)
+		//if(!fadeOutType){ 
+			//eshowBar(); 
+			fadeOut();
+		//}
+		return;
+	} else {
+		//setTimeout('fadeOut();', 3000);
+		//fadeOut();
+		for(;doc[viewPos.doc].first > viewPos.now && viewPos.doc > 0;viewPos.doc--); 
+		for(;doc[viewPos.doc].first+doc[viewPos.doc].pages-doc[viewPos.doc].end < viewPos.now  && viewPos.doc < doc.length-1;viewPos.doc++);
+		//if(doc[viewPos.doc].first > viewPos.now && viewPos.doc > 0){ viewPos.doc-- }
+		//else if(doc[viewPos.doc].first+doc[viewPos.doc].pages-doc[viewPos.doc].end < viewPos.now  && viewPos.doc < doc.length-1){ viewPos.doc++;}
+		$('#DaViewLeft').show();
+		$('#DaViewRight').show();
+    }
+    //alert(viewPos.now + " / " + doc[viewPos.doc].name)
+    //daviewTitle.innerHTML = doc[viewPos.doc].name + " ( " + (viewPos.now+1) + " / " + total + " )";
+    daviewTitle.innerHTML = '140527_\자\몽\자\몽_PPT\템\플\릿_by\홍\양\홍\삼 (1)\.pptx' + " ( " + (viewPos.now+1) + " / " + total + " )";
+    
+    // jiseong
+    
+    if(viewPos.now+1 == 1) { 
+    	var filter = "alpha(opacity="+0+")";
+    	$('#DaViewLeft')[0].style.filter = filter;
+    	$('#DaViewLeft')[0].style.opacity = 0;
+    } else {  
+    	var filter = "alpha(opacity="+100+")";
+    	$('#DaViewLeft')[0].style.filter = filter;
+    	$('#DaViewLeft')[0].style.opacity = 1.0;
+    }
+    
+    if(viewPos.now == images.length-1) { 
+    	var filter = "alpha(opacity="+0+")";
+    	$('#DaViewRight')[0].style.filter = filter;
+    	$('#DaViewRight')[0].style.opacity = 0;
+    } else {  
+    	var filter = "alpha(opacity="+100+")";
+    	$('#DaViewRight')[0].style.filter = filter;
+    	$('#DaViewRight')[0].style.opacity = 1.0;
+    }
+    
+    
+    
+    
+    
+/* 	$('#PageCnt').val(viewPos.now+1); */
+/* 	document.getElementById('PageCnt').value = viewPos.now + 1;  */
+}
+
+function refresh(){
+    for(i=viewPos.now-3; i<viewPos.now+3; i++){
+        if(i>=0 & i<images.length){
+            loadImage(i);
+        }
+    }
+    if(!bDraw[getPrevNumber(getPrevNumber(viewIndex))]){
+        drawImage(getPrevNumber(getPrevNumber(viewIndex)), viewPos.now-2);
+    } 
+    if(!bDraw[getPrevNumber(viewIndex)]){
+        drawImage(getPrevNumber(viewIndex), viewPos.now-1);
+    }
+    if(!bDraw[viewIndex]){
+        drawImage(viewIndex, viewPos.now);
+    }
+    if(!bDraw[getNextNumber(viewIndex)]){
+        drawImage(getNextNumber(viewIndex), viewPos.now+1);
+    }
+    if(!bDraw[getNextNumber(getNextNumber(viewIndex))]){
+        drawImage(getNextNumber(getNextNumber(viewIndex)), viewPos.now+2);
+    }
+    // test
+    var filter = "alpha(opacity="+(imgAlpha*100)+")";
+    canvas[getPrevNumber(getPrevNumber(viewIndex))][0].style.filter = filter;
+    canvas[getPrevNumber(getPrevNumber(viewIndex))][0].style.opacity = imgAlpha;
+    canvas[getPrevNumber(viewIndex)][0].style.filter = filter;
+    canvas[getPrevNumber(viewIndex)][0].style.opacity = imgAlpha;
+    canvas[viewIndex][0].style.filter = "alpha(opacity=100)";
+    canvas[viewIndex][0].style.opacity = 1;
+    canvas[getNextNumber(viewIndex)][0].style.filter = filter;
+    canvas[getNextNumber(viewIndex)][0].style.opacity = imgAlpha;
+    canvas[getNextNumber(getNextNumber(viewIndex))][0].style.filter = filter;
+    canvas[getNextNumber(getNextNumber(viewIndex))][0].style.opacity = imgAlpha;
+    
+    setCanvasDivSize(); 
+    setTitle();
+    /* drawWaterMark(waterMark); */
+}
+
+function thumbScroll(){
+	var thumbCnt = viewPos.now;
+	if(thumbCnt > 0) {
+		$('#DaViewThumbDiv')[0].scrollLeft = $('#thumb'+thumbCnt)[0].offsetLeft- $('body').width()/2;		
+	}
+
+	//alert($('body').width()/2)
+	//$('#DaViewThumbDiv')[0].scrollLeft = $('#DaViewThumbDiv')[0].scrollLeft - $('body').width()/2;
+	//alert($('#thumb'+(viewPos.now))[0].offsetLeft);
+}
+
+function drawImage(nIndex, nImg){
+    canvas[nIndex][0].innerHTML = "";
+    if(nImg<0 || nImg>images.length-1){
+        canvas[nIndex].width(0);
+		canvas[nIndex].height(0);
+    } else {
+	    canvas[nIndex][0].appendChild(images[nImg]);
+	    bDraw[nIndex] = true;
+    }
+    setCanvasSize(nIndex, nImg, 1);
+}
+
+function drawWaterMark(wm){
+     if(wm != null){ 
+        $('#DaViewWaterMark')[0].innerHTML = '';
+
+        var div = document.createElement('div');
+        div.innerHTML = wm;
+
+        div.style.position = 'relative';
+
+		var waterMarkOffset;
+		if($('body').height() >= canvas[viewIndex].height()) {
+			waterMarkOffset = ($('body').height() / 2) + (canvas[viewIndex].height() / 2) - 20 + 'px';
+		} else {
+			waterMarkOffset = $('body').height()-20 +'px'
+		}
+		div.style.top = waterMarkOffset;
+        div.style.font = 12 +'pt arial';
+        
+        $('#DaViewWaterMark')[0].appendChild(div)
+     } 
+}
+
+function drawLRBtn() {
+	var bodySize = $('body').width() / 2 ;
+	var canvasSize = canvas[viewIndex].width() / 2;
+	if(bodySize > canvasSize) {
+		document.getElementById('DaViewLeft').style.left = bodySize - canvasSize - 20 + 'px';
+		document.getElementById('DaViewRight').style.right = bodySize - canvasSize + 20 + 'px';
+	} else {
+		document.getElementById('DaViewLeft').style.left = 5 + 'px';
+		document.getElementById('DaViewRight').style.right = 45 + 'px';
+	}
+}
+
+function flingImage(){
+    if(divLeft < -canvas[viewIndex].width()/2 || direct < -flingValue){
+        moveNext();
+    } else if(divLeft > canvas[viewIndex].width()/2 || direct>flingValue){
+        movePrev();
+    } else if (canvas[viewIndex].width()<$('body').width()){
+        divLeft = 0;
+        refresh();
+    } else if(divLeft < -(canvas[viewIndex].width()-$('body').width())/2){
+        divLeft = -(canvas[viewIndex].width()-$('body').width())/2
+        var defaultLeft = ($('body').width()/2-canvas[viewIndex].width()/2-canvas[getPrevNumber(viewIndex)].width()-canvas[getPrevNumber(getPrevNumber(viewIndex))].width()-50);
+    	$('#DaViewCanvasDiv')[0].style.left = (defaultLeft+divLeft) + "px";
+    } else if(divLeft > (canvas[viewIndex].width()-$('body').width())/2){
+        divLeft = (canvas[viewIndex].width()-$('body').width())/2;
+        var defaultLeft = ($('body').width()/2-canvas[viewIndex].width()/2-canvas[getPrevNumber(viewIndex)].width()-canvas[getPrevNumber(getPrevNumber(viewIndex))].width()-50);
+    	$('#DaViewCanvasDiv')[0].style.left = (defaultLeft+divLeft) + "px";
+    }
+    
+    if(HW){
+    	if(canvas[viewIndex].height() > $('body').height()){
+    	    if(divTop < -(canvas[viewIndex].height()-$('body').height())/2){
+    	        divTop = -(canvas[viewIndex].height()-$('body').height())/2;
+    	    } else if(divTop > (canvas[viewIndex].height()-$('body').height())/2){
+    	        divTop = (canvas[viewIndex].height()-$('body').height())/2;
+    	    }
+        } else {
+            divTop = 0;
+        }
+        defaultTop = (($('body').height()-canvas[viewIndex].height())/2);
+    } else {
+    	if(canvas[viewIndex].height() > $('body').height()){
+    	    if(divTop < -(canvas[viewIndex].height()-$('body').height())){
+    	        divTop = -(canvas[viewIndex].height()-$('body').height());
+    	    } else if(divTop > 0){//}(canvas[viewIndex].height()-$('body').height())/2){
+    	        divTop = 0;//(canvas[viewIndex].height()-$('body').height())/2;
+    	    }
+        } else {
+            divTop = 0;
+        }
+        //defaultTop = 0;//(($('body').height()-canvas[viewIndex].height())/2);
+        if ($('body').height() > canvas[viewIndex].height()) {
+        	defaultTop = (($('body').height()-canvas[viewIndex].height())/2);	
+        } else {
+        	defaultTop = 0;
+        }
+    }
+	canvas[viewIndex][0].style.top = (defaultTop+divTop) + "px";
+}
+
+function GoPage() {
+	var count = document.getElementById('PageCnt').value - 1;
+		if(count < 0) {
+			count = 0;
+			document.getElementById('PageCnt').value = 1;
+		} else if (count > (images.length-1)) {
+			count = images.length - 1;
+			document.getElementById('PageCnt').value = images.length;
+		}
+		movePage(count);
+		document.getElementById('PageCnt').value = null;
+}
+
+function FileList(docName, docFirst) {
+	str += '<li><a href=\'#\' onclick=\'displayList(' + docFirst + '); \'>' + docName + '</a></li>';
+	$('#DaViewFileListDiv').html(str);
+}
+
+function displayList (first) {
+	movePage(first);
+    $('#DaViewFileListDiv').hide();
+}
+
+function on_keycode() {
+	//alert(event.keyCode);
+	if((event.keyCode == 37) || (event.keyCode == 38)) {
+		if(viewPos.scale > 1) {
+			if(event.keyCode == 38){
+				divTop += 30;
+				if(divTop > (canvas[viewIndex].height()-$('body').height())/2){
+	    	        divTop = (canvas[viewIndex].height()-$('body').height())/2;
+	    	    } else {
+					canvas[viewIndex][0].style.top = (defaultTop+divTop) + "px";
+	    	    }
+			} else {
+				divLeft += 30;
+				if(divLeft > (canvas[viewIndex].width()-$('body').width())/2+150){
+					movePrev();
+					//divLeft = (canvas[viewIndex].width()-$('body').width())/2+200;
+				} else {
+					var defaultLeft = ($('body').width()/2-canvas[viewIndex].width()/2-canvas[getPrevNumber(viewIndex)].width()-canvas[getPrevNumber(getPrevNumber(viewIndex))].width()-50);
+					$('#DaViewCanvasDiv')[0].style.left = (defaultLeft+divLeft) + "px";
+				}
+			}
+		} else {
+			movePrev();	
+		}
+	} else if((event.keyCode == 39) || (event.keyCode == 40)) {
+		if(viewPos.scale > 1) {
+			if(event.keyCode == 40){
+				divTop -= 30;
+	    	    if(divTop < -(canvas[viewIndex].height()-$('body').height())/2){
+	    	        divTop = -(canvas[viewIndex].height()-$('body').height())/2;
+	    	    } else {
+					canvas[viewIndex][0].style.top = (defaultTop+divTop) + "px";
+	    	    }
+			} else {
+				divLeft -= 30;
+				if(divLeft < -(canvas[viewIndex].width()-$('body').width())/2-150){
+					moveNext();
+					//divLeft = -(canvas[viewIndex].width()-$('body').width())/2-2s00;
+				} else {
+					var defaultLeft = ($('body').width()/2-canvas[viewIndex].width()/2-canvas[getPrevNumber(viewIndex)].width()-canvas[getPrevNumber(getPrevNumber(viewIndex))].width()-50);
+					$('#DaViewCanvasDiv')[0].style.left = (defaultLeft+divLeft) + "px";
+				}
+			}
+			
+		} else {
+			moveNext();	
+		}
+	} else if(event.keyCode == 13) {
+		if(document.getElementById('PageCnt').value > 0) {
+			GoPage();
+		} else {
+			fullWin();
+		}
+	} else if(event.keyCode == 106) {
+		zoomScale();
+	} else if(event.keyCode == 107) {
+		if (viewPos.scale < 3){
+			viewPos.scale = viewPos.scale * 1.5;
+	        divTop=0;
+		    setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+			setCanvasDivSize();
+		}
+	} else if(event.keyCode == 109) {
+		if (viewPos.scale > 1){
+			viewPos.scale = viewPos.scale / 1.5;
+	        divTop=0;
+		    setCanvasSize(viewIndex,viewPos.now,viewPos.scale);
+			setCanvasDivSize();
+		}
+	} else if (event.keyCode == 33) {
+		movePrev();
+	} else if (event.keyCode == 34) {
+		moveNext();
+	} else if (event.keyCode == 36) {
+		movePage(0);
+	} else if (event.keyCode == 35) {
+		movePage(images.length - 1);
+	}
+}
+
+function wheel(){
+	if($('#DaViewFileListDiv').css("display") == "none"){
+	    var delta = 0;
+	    if (!event) event = window.event;
+	    if (event.wheelDelta) {
+	        delta = event.wheelDelta/120;
+	        if (window.opera) delta = -delta;
+	    } else if (event.detail) delta = -event.detail/3;
+	    if (delta < 0)
+	        moveNext();
+	    else
+	      	movePrev();
+    }
+}
+
+function onlyNum() { 
+  var keycode = window.event.keyCode;
+  if(keycode == 8 || (keycode >= 35 && keycode <= 40) || (keycode >= 46 && keycode <= 57) 
+  || (keycode >= 96 && keycode <= 105) || keycode == 110 || keycode == 190) {
+    window.event.returnValue = true;
+    return;
+  } else {
+    window.event.returnValue = false;
+    return;
+  }
+}
+
+var testing;
+
+function fullWin() {
+	if(parent.requestFullScreen != null) {
+		parent.requestFullScreen();
+	} else {
+	    var docElm = document.getElementById('DaViewCrossBody');
+	    if (docElm.requestFullscreen) {
+	       docElm.requestFullscreen();
+	    } else if(document.getElementById('DaViewCrossBody').msRequestFullscreen){
+	       document.getElementById('DaViewCrossBody').msRequestFullscreen();
+	       docElm.msRequestFullScreen();
+	    } else if (docElm.mozRequestFullScreen) {
+	       docElm.mozRequestFullScreen();
+	    } else if (docElm.webkitRequestFullScreen) {
+	       docElm.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+	    }
+	}
+}
+
+function fadeOut() {
+	var fadeTime = 1500;
+	//$('#DaViewTop').fadeOut(fadeTime);
+/* 	$('#DaViewThumbDiv').fadeOut(fadeTime); */
+	//$('#DaViewLeft').fadeOut(fadeTime);
+	//$('#DaViewRight').fadeOut(fadeTime);
+	var filter = "alpha(opacity="+50+")";
+	//$('#DaViewTop').style.filter.alpha.opacity = 10;
+	$('#DaViewTop')[0].style.filter = filter;
+	$('#DaViewTop')[0].style.opacity = 0.5;
+	$('#DaViewThumbDiv')[0].style.filter = filter;
+	$('#DaViewThumbDiv')[0].style.opacity = 0.5;
+	
+	$('#DaViewLeft')[0].style.filter = filter;
+	$('#DaViewRight')[0].style.filter = filter;
+	$('#DaViewLeft')[0].style.opacity = 0.5;
+	$('#DaViewRight')[0].style.opacity = 0.5;
+}
+
+function hideBar() {
+	$('#DaViewTop').hide();
+	$('#DaViewThumbDiv').hide();
+/*
+	$('#DaViewLeft').hide();
+	$('#DaViewRight').hide();
+*/
+}
+
+function showBar() {
+	$('#DaViewTop').show();
+	$('#DaViewThumbDiv').show();
+/*
+	$('#DaViewLeft').show();
+	$('#DaViewRight').show();
+*/
+}
+
+function viewSubmit(pw, filename) {
+	document.getElementById('pw').value = pw;
+	document.getElementById('filename').value = filename;
+	setCookie(filename, pw+"|NO", 10);
+	document.getElementById('dvparam').submit();
+}
+
+function setCookie(cName, cValue, cDay){
+    var expire = new Date();
+    //expire.setDate(expire.getDate() + cDay);
+    expire.setTime(expire.getTime() + 1000*60*cDay);
+    cookies = cName + '=' + escape(cValue) + '; path=/ '; // 한글 깨짐을 막기위해 escape(cValue)를 합니다.
+    if(typeof cDay != 'undefined') cookies += ';expires=' + expire.toGMTString() + ';';
+    document.cookie = cookies;
+}
+
+// 쿠키 가져오기
+function getCookie(cName) {
+    cName = cName + '=';
+    var cookieData = document.cookie;
+    var start = cookieData.indexOf(cName);
+    var cValue = '';
+    if(start != -1){
+        start += cName.length;
+        var end = cookieData.indexOf(';', start);
+        if(end == -1)end = cookieData.length;
+        cValue = cookieData.substring(start, end);
+    }
+    return unescape(cValue);
+}
+
+</script>
+<style>
+.TopBtn { cursor:hand; width:30px; height:30px;}
+.PageBtn { cursor:hand; width:70px; height:150px; }
+.mRight {margin-right: 15px;}
+.TopBtnDIV { float:left; margin: 3.67px 3.67px 0px 3.67px;}
+.TopBtnDIVRig { float:Right; margin: 3.67px 3.67px 0px 3.67px; }
+.box {
+	width: 200px; /* 너비 */
+	height: 60%; /* 높이 */
+	box-sizing: border-box; /* 박스 사이즈 포함 정도 */
+	border-radius: 20px; /* 모깎기 - 왼쪽 위, 오른쪽 위, 오른쪽 아래, 왼쪽 아래 */
+	border: 2px solid #fff; /* 선 - 두께, 스타일, 컬러 */
+	box-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.5); /* 박스 그림자 - 가로 위치, 세로 위치, 크기, 스프레드, 컬러 */
+	background: #000000; /* 배경 - 이미지, 배경 컬러 지정 */
+	padding-left: 10px;
+	padding-top: 10px;
+	list-style:none;
+}
+.box a {
+	color: white;
+	font-size: 15pt;
+	text-decoration:none;
+	overflow:hidden;
+	text-overflow:ellipsis;
+	white-space:nowrap;
+}
+.box li {
+	margin-bottom: 10px;
+}
+.Font{
+	text-shadow: 0px 0px 0px #ffd500; 
+	color: #fff;
+	font-family: Arial;
+}
+.Canvas {
+	float:left; padding:10px; padding-top:0px; position: relative;
+}
+.ui-page{
+	height : 100%;
+}
+#DaViewTop {
+	width:100%; height:75px; position: absolute; left:0px; top:0px; z-index:9500; padding-top: 5px; padding-bottom: 5px; color : #fff; filter:alpha(opacity=97); opacity: 0.97; background-image:url(Img/topBG.png);
+}
+
+#upload-file-container {	
+   	position:relative;
+	width: 30px;
+	height: 30px;
+	overflow: hidden;
+}
+
+#btnFileOpen {
+	top: 0px;
+	position: absolute;
+	z-index : 10;
+}
+#uploadFile {
+	font-size: 10px;
+	position: absolute;
+	z-index : 100;
+	right: 0px;
+	top: 0px;
+	opactity: 0;
+	
+	filter: alpha(opacity=0);
+	opacity: 0;
+	-ms-fileter: alpha(opacity=0);
+	-khtml-opacity: 0;
+	-moz-opacity: 0;
+}
+</style>
+</head>
+<body id="DaViewCrossBody" oncontextmenu="return false" onselectstart="return false" ondragstart="return false" style="width:100%; height:100%; position:relative; overflow-x:hidden; overflow-y:hidden; background:#444; padding:0px; margin:0px; zoom: 0;" onmousewheel="wheel();" onkeydown="on_keycode()" >
+	<div id="DaViewTop">
+		<div id="DaViewTitleDiv" style="width:100%; height:20px; padding-top: 5px; padding-bottom: 5px; color : #fff;">
+			<div id="DaViewTitle" class="Font" style="width:80%; height:20px; text-align:left; font-size:12pt; margin:5px;">Please, Open File.</div>
+		</div>
+		<div style="float:left; width:100%; height:55px; overflow-x:auto; overflow-y:hidden;">
+			<div id="DaViewButton" style="float:left; width:700px; height:55px; padding-top: 5px; padding-bottom: 5px;">	
+				<!-- 파일 리스트 -->
+<!-- 				<div id="DaViewPageControl" style="float:left; width:40px; height:30px; text-align:left; font-size:8pt;"> -->
+<!-- 					<input type="button" class="TopBtn mRight" id="btnFileList" value="List"/> -->
+
+<!-- 				</div>	 -->
+
+					
+						<div class="TopBtnDIV">
+							<img src="Img/btnSave.png" id="btnSave" class="TopBtn mRight" alt="저장하기" title="저장하기">
+						</div>
+					
+
+				<div class="TopBtnDIV">
+					<form id="uploadForm" name="uploadForm" method="post" enctype="multipart/form-data">
+						<div id="upload-file-container" class="TopBtn" >
+							<img src="Img/btnOpen.png" id="btnFileOpen" class="TopBtn mRight" alt="파일 오픈" title="파일열기" />
+							<input name="uploadFile" class="uploadFile" id="uploadFile" class="TopBtn mRight" type="file" title="파일열기"/>
+						</div> 
+					</form>
+				</div>
+				<div class="TopBtnDIV">
+					
+					<!-- img src="Img/btnOpen.png" id="btnFileOpen"  class="TopBtn mRight" alt="파일 오픈" /-->
+				<!-- 프린트 -->
+					<img src="Img/btnPrint.png" id="btnPrint" class="TopBtn" alt="인쇄하기" title="인쇄하기">
+							
+					<img src="Img/btnFull.png" id="btnFull"  class="TopBtn mRight" alt="전체 화면" title="전체화면"/>
+					<img src="Img/btnList1.png" id="btnFileList"  class="TopBtn mRight" alt="파일 리스트" title="파일 리스트"/>
+
+				<!-- Page 제어 -->
+					<img src="Img/btnFirstPage.png" id="btnFirstPage" class="TopBtn" alt="첫 페이지" title="첫페이지"/>
+					<img src="Img/btnLeft.png" id="btnLeftPage" class="TopBtn" alt="이전 페이지" title="이전 페이지"/>
+					<img src="Img/btnRight.png" id="btnRightPage" class="TopBtn" alt="다음 페이지" title="다음 페이지"/>
+					<img src="Img/btnLastPage.png" id="btnLastPage" class="TopBtn mRight" alt="마지막 페이지" title="마지막 페이지" />
+				</div>
+				<div id="DaViewPageControl" style="top:0px; float:left; width:40px; height:30px; text-align:left; font-size:8pt;">
+					<input id="PageCnt" type="text" data-mini="true" style="text-align: center; width:30px; height:100%" onkeydown="onlyNum()"/>
+				</div>
+				<div class="TopBtnDIV">
+					<img src="Img/btnGoPage.png" id="btnGoPage" class="TopBtn mRight" alt="페이지이동" title="페이지 이동" />
+		
+				<!-- 확대 / 축소 -->
+					<img src="Img/btnZoomOut.png" id="btnZoomOut" class="TopBtn" alt="페이지 축소" title="페이지 축소" />
+					<img src="Img/btnZoomIn.png" id="btnZoomIn" class="TopBtn mRight" alt="페이지 확대" title="페이지 확대" />
+
+					<img src="Img/btnHeight.png" id="btnHeight" class="TopBtn" alt="폭맞춤" title="창 크기에 맞추기"/>
+					<img src="Img/btnWidth.png" id="btnWidth" class="TopBtn mRight" alt="폭맞춤" title="너비에 맞추기"/>
+
+					<img src="Img/btnLink.png" id="btnLink" class="TopBtn" alt="공유하기" title="공유하기" />
+				</div>
+<!-- 				<div class="TopBtnDIV"> -->
+			</div>
+		</div>	
+		<!--div style="position: relative; right:0px; top:0px;"><img src="Img/popup.png" id="btnPopup" alt="팝업" /></div-->
+	</div>
+	<div id="DaViewCanvasView" style="width:100%; height:100%; position: absolute; left:0px; top:0px; right:0px; bottom:0px; overflow-x: hidden; overflow-y:hidden; padding:0px;  background:#ddd;">
+		<div id="DaViewCanvasBack" style="top:25%; width:100%; position: absolute; z-index:0; font-size:60px; color:#99a; font-weight: bold; text-align:center;">
+			DaView Web
+		</div>
+		<div id="DaViewCanvasDiv" style="clear:both; position: absolute;">
+			<div id="DaViewCanvas" style="z-index:7000; float:left;">
+				<div id="DaViewCanvas1" class="Canvas"></div>
+				<div id="DaViewCanvas2" class="Canvas"></div>
+				<div id="DaViewCanvas3" class="Canvas"></div>
+				<div id="DaViewCanvas4" class="Canvas"></div>
+				<div id="DaViewCanvas5" class="Canvas"></div>
+			</div>
+		</div>
+		<div id="DaViewCanvasCover" style="width:100%; height:100%; z-index:9000;">
+			<div id="DaViewWaterMark" style="position: absolute; width:100%; height:100%; z-index:8000; color : #aaf; filter:alpha(opacity=70); opacity: 0.7; text-align:center;"></div>
+			<div id="DaViewProgress" style="position: absolute; width:100%; height:100%; z-index:9000;"></div>
+			<div href="#" id="DaViewLeft" onload="dragEnd1()" style="position: absolute; text-align:center; font-size:30px; top:40%; left:5px; width:30px; color : #aaa; filter:alpha(opacity=50); opacity: 0.5;font-weight: bold;" ><img src="Img/daview_prev.png" id="btnLeftPage" class="PageBtn" alt="이전 페이지"/></div>
+			<div href="#" id="DaViewRight" onload="dragEnd1()" style="position: absolute; text-align:center; font-size:30px; top:40%; right:45px; width:30px; color : #aaa; filter:alpha(opacity=50); opacity: 0.5;font-weight: bold;" ><img src="Img/daview_next.png" id="btnRightPage" class="PageBtn" alt="다음 페이지"/></div>
+		</div>
+	</div>
+	<div id="DaViewThumbDiv" style="height:100px; width:100%; left:0px; right:0px; bottom:0px; overflow-x: scroll; overflow-y: hidden; position: absolute; z-index:9999; background:#000; filter:alpha(opacity=80); opacity: 0.8; background-image:url(Img/topBG1.png); text-align:center;" >
+		<div id="DaViewThumb" class="Font" style="height:100px; float:left;"></div>
+	</div>
+	<div id="DaViewFileListDiv" class="box" style="text-align: left;border-radius:10px; -moz-border-radius: 10px; -webkit-border-radius: 10px; left:5px; right:0px; top:90px; overflow-x: hidden; overflow-y: auto; position: absolute; z-index:9999; ">
+	</div>
+	<!-- div id="DaViewScroll" style="display:none; background:#000;  color:#fff; font-size:30px; position: absolute; width:200px; left:50%; top:40%; margin: 0 0 0 -120px; z-index:9999; text-align:center; padding:20px;"></div-->
+	<div id="DaViewFunction"></div>
+	<div id="fileUpload" style="display:none">
+		<form id="uploadForm" name="uploadForm" method="post" enctype="multipart/form-data">
+			<input name="uploadFile" id="uploadFile" class="uploadFile" type="file" />
+			<input name="filepath" id="filepath" type="hidden" /> 
+		</form>
+		<form id="dvparam" action="View">
+			<input type="hidden" id="mode" name="mode" value="web"/>
+			<input type="hidden" id="filename" name="filename" />
+			<input type="hidden" id="pw" name="pw"/>
+		</form>
+	</div>
+	
+</body>
